@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Summarizer</title>
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-image: url('https://cdn.pixabay.com/photo/2017/08/30/01/05/milky-way-2695569_1280.jpg');
+            background-size: cover;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .form-container {
+            display: none;
+            text-align: center;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        #pdfSection {
+            display: none;
+        }
+
+        /* Flexbox for form containers */
+        .form-container input,
+        .form-container button {
+            width: 80%;
+            margin: 10px auto;
+        }
+
+        /* Flexbox layout for user dashboard */
+        #dashboard {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+        }
+
+        #dashboard .profile {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #dashboard .profile img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+
+        #dashboard .options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        #dashboard .options button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #dashboard .options button:hover {
+            background-color: #666;
+        }
+
+        /* Grid layout for PDF Section */
+        #pdfSection {
+            display: grid;
+            justify-items: center;
+            grid-gap: 20px;
+        }
+
+        #pdfSection input,
+        #pdfSection button {
+            width: 80%;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login & Sign Up Page -->
+    <div class="container form-container" id="loginForm">
+        <h3>Login</h3>
+        <input type="text" id="loginUsername" placeholder="Username"><br>
+        <input type="password" id="loginPassword" placeholder="Password"><br>
+        <button onclick="login()">Login</button>
+        <p>Don't have an account? <a href="javascript:void(0);" onclick="showSignupForm()">Sign up</a></p>
+    </div>
+
+    <div class="container form-container" id="signupForm">
+        <h3>Sign Up</h3>
+        <input type="text" id="signupUsername" placeholder="Username"><br>
+        <input type="password" id="signupPassword" placeholder="Password"><br>
+        <button onclick="signup()">Sign Up</button>
+        <p>Already have an account? <a href="javascript:void(0);" onclick="showLoginForm()">Login</a></p>
+    </div>
+
+    <!-- PDF Summarization Section -->
+    <div class="container" id="pdfSection">
+        <h2>PDF Processor</h2>
+        <input type="file" id="pdfInput" accept=".pdf"><br>
+        <button onclick="processPdf()">Download Summarized Text as PDF</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        let users = []; // In-memory user storage (replace with a database for real apps)
+        let loggedInUser = null; // Track the logged-in user
+
+        // Show login form
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.add('active');
+            document.getElementById('signupForm').classList.remove('active');
+            document.getElementById('pdfSection').style.display = "none";
+            document.getElementById('dashboard').style.display = "none";
+        }
+
+        // Show signup form
+        function showSignupForm() {
+            document.getElementById('signupForm').classList.add('active');
+            document.getElementById('loginForm').classList.remove('active');
+        }
+
+        // Handle signup
+        function signup() {
+            const username = document.getElementById("signupUsername").value;
+            const password = document.getElementById("signupPassword").value;
+
+            // Simple validation
+            if (!username || !password) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            // Check if user already exists
+            if (users.find(user => user.username === username)) {
+                alert("Username already exists.");
+                return;
+            }
+
+            // Save user (In a real app, you would save this to a database)
+            users.push({ username, password });
+            alert("Sign up successful. You can now log in.");
+            showLoginForm();
+        }
+
+        // Handle login
+        function login() {
+            const username = document.getElementById("loginUsername").value;
+            const password = document.getElementById("loginPassword").value;
+
+            // Simple validation
+            if (!username || !password) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            // Check if credentials are correct
+            const user = users.find(user => user.username === username && user.password === password);
+            if (user) {
+                loggedInUser = user;
+                alert("Login successful!");
+                document.getElementById('pdfSection').style.display = "block";  // Show PDF Section
+                document.getElementById('loginForm').classList.remove('active');  // Hide Login Form
+            } else {
+                alert("Invalid username or password.");
+            }
+        }
+
+        // Process PDF
+        function processPdf() {
+            if (!loggedInUser) {
+                alert("You must be logged in to process PDFs.");
+                return;
+            }
+
+            const fileInput = document.getElementById("pdfInput");
+            if (fileInput.files.length === 0) {
+                alert("Please upload a PDF file first.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const pdfData = new Uint8Array(e.target.result);
+                pdfjsLib.getDocument(pdfData).promise.then(function(pdfDoc) {
+                    let numPages = pdfDoc.numPages;
+                    let text = '';
+
+                    let pagesProcessed = 0;
+                    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+                        pdfDoc.getPage(pageNum).then(function(page) {
+                            page.getTextContent().then(function(content) {
+                                text += content.items.map(item => item.str).join(' ') + '\n';
+
+                                pagesProcessed++;
+                                if (pagesProcessed === numPages) {
+                                    let summary = summarizeText(text);
+                                    downloadSummaryAsPdf(summary);
+                                }
+                            });
+                        });
+                    }
+                });
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Simple text summarization
+        function summarizeText(text) {
+            let sentences = text.split('. ');
+            let summary = sentences.slice(0, Math.min(10, sentences.length)).join('. ') + '.';
+            return summary;
+        }
+
+        // Download summarized text as PDF
+        function downloadSummaryAsPdf(summary) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(18);
+            doc.text("Summarized Text", 10, 10);
+
+            doc.setFontSize(16); 
+
+            const pageWidth = doc.internal.pageSize.width - 20;
+            let yPosition = 20;
+
+            let lines = doc.splitTextToSize(summary, pageWidth);
+            doc.text(lines, 10, yPosition);
+
+            doc.save('summarized_text.pdf');
+        }
+
+        // Initial form view
+        showLoginForm();
+    </script>
+
+</body>
+</html>
