@@ -14,7 +14,7 @@ Clone the repository:
 
 bash
 Copy code
-git clone https://github.com/yourusername/AI-Flashcard-Generator.git
+git clone AI-Flashcard-Generator.git
 cd AI-Flashcard-Generator
 Install the necessary dependencies:
 
@@ -57,4 +57,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 Acknowledgments
 Thanks to the developers of the Generative AI model used in this project.
 Special thanks to the maintainers of libraries like PyPDF2 and transformers that made this tool possible.
-Let me know if you need more customization or if you would like additional details added!
